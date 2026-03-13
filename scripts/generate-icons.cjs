@@ -1,6 +1,9 @@
 // Generates PWA icons as pure Node.js — no external dependencies.
-// Produces a green rounded-square background with a white plate circle.
-// Run with: node scripts/generate-icons.js
+// Produces two variants:
+//   standard  — rounded-square background (for favicon / apple-touch-icon)
+//   maskable  — full-bleed square background, content in center 80% safe zone
+//                (required for Android adaptive icons)
+// Run with: node scripts/generate-icons.cjs
 
 const zlib = require('zlib');
 const fs = require('fs');
@@ -37,13 +40,18 @@ function inRoundedRect(x, y, size, radius) {
   return false;
 }
 
-function renderIcon(size) {
-  const cornerRadius = size * 0.22;
+// Draws the icon artwork into rawData.
+// safeZone: fraction of size that is the drawable area (1.0 = full, 0.8 = maskable safe zone)
+function renderIcon(size, safeZone = 1.0, roundedCorners = true) {
+  const cornerRadius = roundedCorners ? size * 0.22 : 0;
   const cx = size / 2, cy = size / 2;
-  const plateR = size * 0.32;
-  const rimR = size * 0.36;
-  const domeR = size * 0.18;
-  const domeCy = cy - size * 0.04;
+
+  // Scale all artwork to fit within the safe zone
+  const scale = safeZone;
+  const plateR  = size * 0.32 * scale;
+  const rimR    = size * 0.36 * scale;
+  const domeR   = size * 0.18 * scale;
+  const domeCy  = cy - size * 0.04 * scale;
 
   const rowSize = size * 3;
   const rawData = Buffer.alloc((rowSize + 1) * size, 0);
@@ -54,40 +62,41 @@ function renderIcon(size) {
       const offset = y * (rowSize + 1) + 1 + x * 3;
       let r, g, b;
 
-      if (!inRoundedRect(x, y, size, cornerRadius)) {
-        // Transparent → write 0,0,0 but we'll use RGBA... actually use white bg for icons
-        r = 255; g = 255; b = 255;
+      const inShape = roundedCorners
+        ? inRoundedRect(x, y, size, cornerRadius)
+        : true; // maskable: full-bleed square, always draw
+
+      if (!inShape) {
+        r = 255; g = 255; b = 255; // white outside rounded shape
       } else {
-        // Green background gradient (top-left lighter, bottom-right darker)
+        // Green background gradient
         const t = (x + y) / (size * 2);
         r = lerp(GREEN.r + 20, GREEN_DARK.r, t);
         g = lerp(GREEN.g + 20, GREEN_DARK.g, t);
         b = lerp(GREEN.b + 20, GREEN_DARK.b, t);
 
-        // Plate rim (slightly off-white ring)
+        // Plate rim
         if (inCircle(x, y, cx, cy, rimR) && !inCircle(x, y, cx, cy, plateR)) {
-          const blend = 0.85;
-          r = lerp(r, OFF_WHITE.r, blend);
-          g = lerp(g, OFF_WHITE.g, blend);
-          b = lerp(b, OFF_WHITE.b, blend);
+          r = lerp(r, OFF_WHITE.r, 0.85);
+          g = lerp(g, OFF_WHITE.g, 0.85);
+          b = lerp(b, OFF_WHITE.b, 0.85);
         }
 
-        // Plate surface (white circle)
+        // Plate surface
         if (inCircle(x, y, cx, cy, plateR)) {
           r = WHITE.r; g = WHITE.g; b = WHITE.b;
         }
 
-        // Dome / cloche on plate (green circle, centered slightly above)
+        // Dome
         if (inCircle(x, y, cx, domeCy, domeR) && y < domeCy + domeR * 0.15) {
-          const blend = 0.9;
-          r = lerp(r, GREEN.r, blend);
-          g = lerp(g, GREEN.g, blend);
-          b = lerp(b, GREEN.b, blend);
+          r = lerp(r, GREEN.r, 0.9);
+          g = lerp(g, GREEN.g, 0.9);
+          b = lerp(b, GREEN.b, 0.9);
         }
 
-        // Small leaf accent top of dome
+        // Leaf accent
         const leafCy = domeCy - domeR * 0.6;
-        if (inCircle(x, y, cx - size * 0.01, leafCy, size * 0.055)) {
+        if (inCircle(x, y, cx - size * 0.01, leafCy, size * 0.055 * scale)) {
           r = GREEN_DARK.r; g = GREEN_DARK.g; b = GREEN_DARK.b;
         }
       }
@@ -127,17 +136,20 @@ function chunk(type, data) {
   return Buffer.concat([len, typeB, data, crcB]);
 }
 
-function buildPNG(size) {
+function buildPNG(size, maskable = false) {
   const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 
   const ihdrData = Buffer.alloc(13);
   ihdrData.writeUInt32BE(size, 0);
   ihdrData.writeUInt32BE(size, 4);
-  ihdrData[8] = 8;  // bit depth
-  ihdrData[9] = 2;  // color type: RGB
-  // bytes 10-12 are 0 (compression, filter, interlace)
+  ihdrData[8] = 8; // bit depth
+  ihdrData[9] = 2; // color type: RGB
 
-  const rawData = renderIcon(size);
+  // maskable icons: full-bleed square bg, content in center 80% safe zone
+  const rawData = maskable
+    ? renderIcon(size, 0.8, false)
+    : renderIcon(size, 1.0, true);
+
   const compressed = zlib.deflateSync(rawData, { level: 9 });
 
   return Buffer.concat([
@@ -151,15 +163,24 @@ function buildPNG(size) {
 const outDir = path.join(__dirname, '..', 'public', 'icons');
 fs.mkdirSync(outDir, { recursive: true });
 
+// Standard icons (any)
 for (const size of [192, 512]) {
-  const png = buildPNG(size);
+  const png = buildPNG(size, false);
   const outPath = path.join(outDir, `icon-${size}x${size}.png`);
   fs.writeFileSync(outPath, png);
   console.log(`✓ ${outPath} (${(png.length / 1024).toFixed(1)} KB)`);
 }
 
-// Also write a 180x180 apple-touch-icon
-const apple = buildPNG(180);
+// Maskable icons (Android adaptive icon safe zone)
+for (const size of [192, 512]) {
+  const png = buildPNG(size, true);
+  const outPath = path.join(outDir, `icon-${size}x${size}-maskable.png`);
+  fs.writeFileSync(outPath, png);
+  console.log(`✓ ${outPath} (${(png.length / 1024).toFixed(1)} KB)`);
+}
+
+// Apple touch icon (180x180, standard rounded)
+const apple = buildPNG(180, false);
 const applePath = path.join(__dirname, '..', 'public', 'apple-touch-icon.png');
 fs.writeFileSync(applePath, apple);
 console.log(`✓ ${applePath} (${(apple.length / 1024).toFixed(1)} KB)`);
