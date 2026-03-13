@@ -1,6 +1,6 @@
 # Calorie Buddy
 
-A social calorie tracker built with React + Vite. Track your daily intake alongside a friend for mutual accountability on a calorie-deficit lifestyle.
+A calorie tracker built with React + Vite. Track your daily intake alongside a friend for mutual accountability on a calorie-deficit lifestyle.
 
 ---
 
