@@ -86,7 +86,7 @@ Because this app has no backend, sharing works via a daily sync code:
 ## Development
 
 ```bash
-npm run dev             # start dev server
+npm run dev             # starts dev server
 npm run build           # production build → dist/
 npm run preview         # preview the production build locally
 npm run generate-icons  # regenerate PWA icons (public/icons/)
