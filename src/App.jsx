@@ -1,98 +1,77 @@
-import { useState } from 'react'
-import { useCalorieStore } from './hooks/useCalorieStore'
-import { todayKey, fmtDate, calColor, sumCal } from './utils/helpers'
-import Onboarding from './components/Onboarding'
-import Dashboard from './components/Dashboard'
-import FoodLog from './components/FoodLog'
-import FriendScreen from './components/FriendScreen'
-import History from './components/History'
-import NavBar from './components/NavBar'
+export default function BackgroundCustomizerDemo() {
+  const BRAND_COLORS = ['#FFFFFF', '#F0F4FF', '#1A1A2E', '#E8F5E9', '#FFF3E0'];
 
-const HEADER_TITLE = {
-  dashboard: (name) => `Hi, ${name} 👋`,
-  log: () => 'Food Log',
-  friend: () => 'Friend',
-  history: () => 'History',
-}
+  function safeStorage() {
+    try { return window.localStorage; } catch { return null; }
+  }
 
-export default function App() {
-  const {
-    profile,
-    logs,
-    friend,
-    setupProfile,
-    updateProfile,
-    addEntry,
-    deleteEntry,
-    importFriend,
-    clearFriend,
-  } = useCalorieStore()
-  const [tab, setTab] = useState('dashboard')
+  function useBackgroundColor(colors, defaultColor) {
+    const storage = safeStorage();
+    const [currentColor, setCurrentColor] = React.useState(() => {
+      if (!colors.length) return defaultColor;
+      const stored = storage?.getItem('bg-customizer-color');
+      return colors.includes(stored) ? stored : colors[0];
+    });
 
-  if (!profile) return <Onboarding onDone={setupProfile} />
+    const cycleColor = React.useCallback(() => {
+      setCurrentColor(prev => {
+        const idx = colors.indexOf(prev);
+        const next = colors[(idx + 1) % colors.length];
+        storage?.setItem('bg-customizer-color', next);
+        return next;
+      });
+    }, [colors]);
 
-  const today = todayKey()
-  const consumed = sumCal(logs[today] || [])
-  const pct = consumed / profile.goal
-  console.log('today', today)
+    return { currentColor, cycleColor };
+  }
+
+  function BackgroundCustomizer({ colors, currentColor, onColorChange, scope = 'local' }) {
+    if (!colors.length) return null;
+    const idx = colors.indexOf(currentColor);
+    const preview = colors[(idx + 1) % colors.length];
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <button onClick={onColorChange} style={{
+          padding: '8px 18px', borderRadius: 6, border: '1px solid #ccc',
+          cursor: 'pointer', fontWeight: 600, background: '#fff', fontSize: 14
+        }}>
+          Change {scope === 'local' ? 'Panel' : 'App'} Background
+        </button>
+        <span style={{ fontSize: 13, color: '#555' }}>Next →</span>
+        <div style={{ width: 24, height: 24, borderRadius: 4, background: preview, border: '1px solid #ccc' }} />
+        <span style={{ fontSize: 12, color: '#888' }}>{preview}</span>
+      </div>
+    );
+  }
+
+  const { currentColor, cycleColor } = useBackgroundColor(BRAND_COLORS, '#FFFFFF');
+  const isDark = currentColor === '#1A1A2E';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-      <header className="header">
-        <div>
-          <div className="header-title">{HEADER_TITLE[tab](profile.name)}</div>
-          {tab === 'dashboard' && (
-            <div className="header-sub">{fmtDate(today)}</div>
-          )}
-        </div>
-        {tab === 'dashboard' && (
-          <div style={{ textAlign: 'right' }}>
-            <div
-              style={{ fontWeight: 700, fontSize: 18, color: calColor(pct) }}
-            >
-              {consumed.toLocaleString()} cal
-            </div>
-            <div className="muted" style={{ fontSize: 12 }}>
-              of {profile.goal.toLocaleString()}
-            </div>
-          </div>
-        )}
-        {tab === 'friend' && (
-          <div
-            style={{
-              fontSize: 12,
-              fontWeight: 600,
-              color: friend ? 'var(--green)' : 'var(--muted)',
-            }}
-          >
-            {friend ? `● ${friend.name}` : '○ No friend'}
-          </div>
-        )}
-      </header>
-
-      <main className="screen">
-        {tab === 'dashboard' && (
-          <Dashboard profile={profile} logs={logs} friend={friend} />
-        )}
-        {tab === 'log' && (
-          <FoodLog logs={logs} onAdd={addEntry} onDelete={deleteEntry} />
-        )}
-        {tab === 'friend' && (
-          <FriendScreen
-            profile={profile}
-            logs={logs}
-            friend={friend}
-            onImport={importFriend}
-            onClear={clearFriend}
-            onUpdateProfile={updateProfile}
-          />
-        )}
-        {tab === 'history' && (
-          <History profile={profile} logs={logs} friend={friend} />
-        )}
-      </main>
-
-      <NavBar tab={tab} setTab={setTab} />
+    <div style={{
+      backgroundColor: currentColor, minHeight: '100vh',
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      justifyContent: 'center', transition: 'background-color 0.3s ease',
+      fontFamily: 'sans-serif'
+    }}>
+      <div style={{
+        padding: 32, borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.12)',
+        background: isDark ? '#2a2a4a' : '#ffffffcc', maxWidth: 420, width: '90%'
+      }}>
+        <h3 style={{ margin: '0 0 8px', color: isDark ? '#eee' : '#222' }}>Panel Title</h3>
+        <p style={{ margin: '0 0 20px', color: isDark ? '#aaa' : '#555', fontSize: 14 }}>
+          Scope: <strong>local</strong> — only this panel is affected.
+        </p>
+        <BackgroundCustomizer
+          colors={BRAND_COLORS}
+          currentColor={currentColor}
+          onColorChange={cycleColor}
+          scope="local"
+        />
+        <p style={{ marginTop: 16, fontSize: 12, color: isDark ? '#888' : '#aaa' }}>
+          Current: {currentColor} · Persisted via localStorage
+        </p>
+      </div>
     </div>
-  )
+  );
 }
