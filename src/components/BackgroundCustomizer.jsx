@@ -1,77 +1,84 @@
 export default function BackgroundCustomizer() {
-  const COLOR_PALETTE = [
-    { id: 'default',      hex: '#FFFFFF', label: 'Default White' },
-    { id: 'warm-cream',   hex: '#FAF7F0', label: 'Warm Cream' },
-    { id: 'soft-gray',    hex: '#F0F2F5', label: 'Soft Gray' },
-    { id: 'deep-navy',    hex: '#1A1F2E', label: 'Deep Navy' },
-    { id: 'forest',       hex: '#1E2D2F', label: 'Forest' },
-    { id: 'dusk',         hex: '#2D1F1F', label: 'Dusk' },
+  const COLOR_OPTIONS = [
+    { id: "light", label: "Light", color: "#ffffff" },
+    { id: "sepia", label: "Sepia", color: "#f5e6c8" },
+    { id: "dark", label: "Dark", color: "#1a1a2e" },
+    { id: "high-contrast", label: "High Contrast", color: "#000000" },
   ];
 
-  const DARK_IDS = new Set(['deep-navy', 'forest', 'dusk']);
-
-  const [activeId, setActiveId] = React.useState(
-    () => localStorage.getItem('bgColorId') || 'default'
-  );
-  const [panelOpen, setPanelOpen] = React.useState(false);
-
-  const active = COLOR_PALETTE.find(c => c.id === activeId) || COLOR_PALETTE[0];
-  const isDark = DARK_IDS.has(activeId);
-  const textColor = isDark ? '#F0F2F5' : '#1A1F2E';
-
-  const selectColor = (id) => {
-    setActiveId(id);
-    localStorage.setItem('bgColorId', id);
-    setPanelOpen(false);
+  const getInitial = () => {
+    try { return localStorage.getItem("bg-color") || "light"; } catch { return "light"; }
   };
 
-  const reset = () => {
-    setActiveId('default');
-    localStorage.removeItem('bgColorId');
-    setPanelOpen(false);
-  };
+  const [selected, setSelected] = React.useState(getInitial);
+
+  React.useEffect(() => {
+    try { localStorage.setItem("bg-color", selected); } catch {}
+  }, [selected]);
+
+  const current = COLOR_OPTIONS.find(o => o.id === selected);
+  const isDark = selected === "dark" || selected === "high-contrast";
 
   return (
-    <div style={{ minHeight: '100vh', background: active.hex, color: textColor, fontFamily: 'sans-serif', transition: 'background 0.3s', padding: '2rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h2 style={{ margin: 0 }}>My Page</h2>
-        <div style={{ position: 'relative' }}>
-          <button
-            onClick={() => setPanelOpen(o => !o)}
-            title="Customize background color"
-            style={{ background: active.hex, color: textColor, border: `2px solid ${textColor}`, borderRadius: '8px', padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: 600 }}
-          >
-            🎨 Background
-          </button>
-          {panelOpen && (
-            <div style={{ position: 'absolute', right: 0, top: '110%', background: '#fff', color: '#1A1F2E', border: '1px solid #ccc', borderRadius: '10px', padding: '1rem', zIndex: 10, boxShadow: '0 4px 16px rgba(0,0,0,0.15)', minWidth: '220px' }}>
-              <p style={{ margin: '0 0 0.75rem', fontWeight: 700, fontSize: '0.85rem' }}>Choose a color</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                {COLOR_PALETTE.map(c => (
-                  <button
-                    key={c.id}
-                    title={c.label}
-                    onClick={() => selectColor(c.id)}
-                    style={{ background: c.hex, border: c.id === activeId ? '3px solid #4A90E2' : '2px solid #ccc', borderRadius: '6px', height: '48px', cursor: 'pointer', position: 'relative' }}
-                  >
-                    {c.id === activeId && <span style={{ fontSize: '1rem' }}>✓</span>}
-                  </button>
-                ))}
-              </div>
-              <button
-                onClick={reset}
-                style={{ width: '100%', padding: '0.4rem', borderRadius: '6px', border: '1px solid #ccc', cursor: 'pointer', background: '#f5f5f5', color: '#333', fontSize: '0.85rem' }}
-              >
-                ↺ Reset to Default
+    <div style={{
+      minHeight: "100vh", backgroundColor: current.color,
+      display: "flex", flexDirection: "column", alignItems: "center",
+      justifyContent: "center", transition: "background-color 0.3s ease",
+      fontFamily: "sans-serif",
+    }}>
+      <div style={{
+        background: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+        borderRadius: 16, padding: "2rem 2.5rem", textAlign: "center",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.12)",
+      }}>
+        <h2 style={{ margin: "0 0 0.5rem", color: isDark ? "#fff" : "#111" }}>
+          Background Customizer
+        </h2>
+        <p style={{ margin: "0 0 1.5rem", color: isDark ? "#ccc" : "#555", fontSize: 14 }}>
+          Selected: <strong>{current.label}</strong>
+        </p>
+
+        <div role="group" aria-label="Background color options"
+          style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+          {COLOR_OPTIONS.map(option => {
+            const isActive = option.id === selected;
+            return (
+              <button key={option.id} onClick={() => setSelected(option.id)}
+                aria-pressed={isActive}
+                aria-label={`${option.label} background${isActive ? ", currently selected" : ""}`}
+                style={{
+                  display: "flex", flexDirection: "column", alignItems: "center",
+                  gap: 6, padding: "10px 14px", borderRadius: 10, cursor: "pointer",
+                  border: isActive ? "3px solid #4a90d9" : "3px solid transparent",
+                  background: isActive
+                    ? (isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.08)")
+                    : (isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)"),
+                  outline: "none", transition: "all 0.15s ease",
+                }}>
+                <div style={{
+                  width: 40, height: 40, borderRadius: 8,
+                  backgroundColor: option.color,
+                  border: "1px solid rgba(0,0,0,0.2)",
+                  boxShadow: isActive ? "0 0 0 2px #4a90d9" : "none",
+                }} />
+                <span style={{ fontSize: 12, color: isDark ? "#ddd" : "#333", fontWeight: isActive ? 700 : 400 }}>
+                  {option.label}
+                </span>
+                {isActive && <span style={{ fontSize: 10, color: "#4a90d9", fontWeight: 700 }}>✓ Active</span>}
               </button>
-            </div>
-          )}
+            );
+          })}
         </div>
+
+        <p style={{ marginTop: "1.5rem", fontSize: 12, color: isDark ? "#888" : "#999" }}>
+          Preference saved to localStorage
+        </p>
       </div>
-      <p style={{ maxWidth: '480px', lineHeight: 1.6 }}>
-        This page adapts to your chosen background. Your preference is saved locally and restored on your next visit.
-        Current theme: <strong>{active.label}</strong>.
-      </p>
+
+      <div aria-live="polite" aria-atomic="true"
+        style={{ position: "absolute", left: -9999, width: 1, height: 1, overflow: "hidden" }}>
+        Background changed to {current.label}
+      </div>
     </div>
   );
 }
