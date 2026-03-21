@@ -18,9 +18,9 @@ export default function NavBar({ tab, setTab }) {
         >
           <span className="nav-icon">{item.icon}</span>
           {item.label}
+          {item.id === 'dashboard' && <ThemeToggle />}
         </button>
       ))}
-      <ThemeToggle />
     </nav>
   );
 }
