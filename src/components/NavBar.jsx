@@ -1,3 +1,5 @@
+import ThemeToggle from './ThemeToggle';
+
 const NAV_ITEMS = [
   { id: 'dashboard', icon: '🏠', label: 'Home' },
   { id: 'log', icon: '✏️', label: 'Log' },
@@ -18,6 +20,7 @@ export default function NavBar({ tab, setTab }) {
           {item.label}
         </button>
       ))}
+      <ThemeToggle />
     </nav>
   );
 }
