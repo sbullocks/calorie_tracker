@@ -1,19 +1,32 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo, useReducer } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+  useReducer,
+} from 'react'
 
 export default function ThemeToggleDemo() {
   const [theme, setTheme] = React.useState(() => {
-    try { return localStorage.getItem('theme') ?? 'light'; } catch { return 'light'; }
-  });
+    try {
+      return localStorage.getItem('theme') ?? 'light'
+    } catch {
+      return 'light'
+    }
+  })
 
   React.useEffect(() => {
-    try { localStorage.setItem('theme', theme); } catch {}
-  }, [theme]);
+    try {
+      localStorage.setItem('theme', theme)
+    } catch {}
+  }, [theme])
 
   const toggleTheme = React.useCallback(() => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light');
-  }, []);
+    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'))
+  }, [])
 
-  const isDark = theme === 'dark';
+  const isDark = theme === 'dark'
 
   const styles = {
     app: {
@@ -56,13 +69,17 @@ export default function ThemeToggleDemo() {
       maxWidth: 400,
       transition: 'background 0.3s',
     },
-  };
+  }
 
   return (
     <div style={styles.app}>
       <nav style={styles.navbar}>
         <h1 style={styles.logo}>MyApp</h1>
-        <button onClick={toggleTheme} style={styles.toggleBtn} aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}>
+        <button
+          onClick={toggleTheme}
+          style={styles.toggleBtn}
+          aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
+        >
           <span>{isDark ? '☀️' : '🌙'}</span>
           <span style={styles.label}>{isDark ? 'Light' : 'Dark'}</span>
         </button>
@@ -70,9 +87,12 @@ export default function ThemeToggleDemo() {
       <div style={styles.content}>
         <div style={styles.card}>
           <h3 style={{ marginTop: 0 }}>ThemeToggle is mounted ✅</h3>
-          <p style={{ margin: 0 }}>Current theme: <strong>{theme}</strong>. Preference persists across refreshes via localStorage.</p>
+          <p style={{ margin: 0 }}>
+            Current theme: <strong>{theme}</strong>. Preference persists across
+            refreshes via localStorage.
+          </p>
         </div>
       </div>
     </div>
-  );
+  )
 }

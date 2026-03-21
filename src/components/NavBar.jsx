@@ -1,11 +1,11 @@
-import ThemeToggle from './ThemeToggle';
+import ThemeToggle from './ThemeToggle'
 
 const NAV_ITEMS = [
   { id: 'dashboard', icon: '🏠', label: 'Home' },
   { id: 'log', icon: '✏️', label: 'Log' },
   { id: 'friend', icon: '👥', label: 'Friend' },
   { id: 'history', icon: '📊', label: 'History' },
-];
+]
 
 export default function NavBar({ tab, setTab }) {
   return (
@@ -22,5 +22,5 @@ export default function NavBar({ tab, setTab }) {
       ))}
       <ThemeToggle />
     </nav>
-  );
+  )
 }
