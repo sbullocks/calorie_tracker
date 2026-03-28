@@ -34,7 +34,7 @@ export default function App() {
   const today = todayKey()
   const consumed = sumCal(logs[today] || [])
   const pct = consumed / profile.goal
-  console.log('today', today)
+  // console.log('today', today)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
