@@ -7,6 +7,7 @@ import FoodLog from './components/FoodLog'
 import FriendScreen from './components/FriendScreen'
 import History from './components/History'
 import NavBar from './components/NavBar'
+import ThemeToggle from './components/ThemeToggle'
 
 const HEADER_TITLE = {
   dashboard: (name) => `Hi, ${name} 👋`,
@@ -16,6 +17,8 @@ const HEADER_TITLE = {
 }
 
 export default function App() {
+  const [isDark, setIsDark] = useState(false)
+  const toggleTheme = () => setIsDark(p => !p)
   const {
     profile,
     logs,
@@ -37,7 +40,7 @@ export default function App() {
   // console.log('today', today)
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: isDark ? '#121212' : '#ffffff', transition: 'background-color 0.3s ease' }}>
       <header className="header">
         <div>
           <div className="header-title">{HEADER_TITLE[tab](profile.name)}</div>
@@ -71,6 +74,7 @@ export default function App() {
       </header>
 
       <main className="screen">
+        <ThemeToggle isDark={isDark} onToggle={toggleTheme} />
         {tab === 'dashboard' && (
           <Dashboard profile={profile} logs={logs} friend={friend} />
         )}
