@@ -1,73 +1,74 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo, useReducer } from 'react';
+import React from 'react';
 
-export default function ThemeToggle() {
-  const getInitialTheme = () => {
-    try {
-      const stored = localStorage.getItem("theme");
-      if (stored === "light" || stored === "dark") return stored;
-    } catch {}
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+export default function ThemeToggle({ isDark, onToggle }) {
+  const containerStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '10px 16px',
+    borderRadius: '12px',
+    backgroundColor: isDark ? '#2a2a2a' : '#f0f0f0',
+    border: `1px solid ${isDark ? '#444' : '#ddd'}`,
+    width: 'fit-content',
+    cursor: 'pointer',
+    userSelect: 'none',
+    transition: 'background-color 0.3s ease, border-color 0.3s ease',
   };
 
-  const [theme, setTheme] = React.useState(getInitialTheme);
+  const labelStyle = {
+    fontSize: '14px',
+    fontWeight: '500',
+    color: isDark ? '#e0e0e0' : '#333',
+    transition: 'color 0.3s ease',
+  };
 
-  React.useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-    try { localStorage.setItem("theme", theme); } catch {}
-  }, [theme]);
+  const trackStyle = {
+    position: 'relative',
+    width: '44px',
+    height: '24px',
+    borderRadius: '12px',
+    backgroundColor: isDark ? '#4f8ef7' : '#ccc',
+    transition: 'background-color 0.3s ease',
+    flexShrink: 0,
+  };
 
-  const toggle = React.useCallback(() => {
-    setTheme(prev => (prev === "light" ? "dark" : "light"));
-  }, []);
+  const thumbStyle = {
+    position: 'absolute',
+    top: '3px',
+    left: isDark ? '23px' : '3px',
+    width: '18px',
+    height: '18px',
+    borderRadius: '50%',
+    backgroundColor: '#fff',
+    boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
+    transition: 'left 0.25s ease',
+  };
 
-  const isDark = theme === "dark";
-
-  const tokens = {
-    bg: isDark ? "#111827" : "#f9fafb",
-    surface: isDark ? "#1f2937" : "#ffffff",
-    text: isDark ? "#f3f4f6" : "#111827",
-    subtext: isDark ? "#9ca3af" : "#6b7280",
-    border: isDark ? "#374151" : "#e5e7eb",
-    btnBg: isDark ? "#3b82f6" : "#1d4ed8",
+  const iconStyle = {
+    fontSize: '16px',
+    lineHeight: 1,
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: tokens.bg, color: tokens.text, fontFamily: "system-ui, sans-serif", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 24, transition: "background 0.3s, color 0.3s" }}>
-      <div style={{ background: tokens.surface, border: `1px solid ${tokens.border}`, borderRadius: 16, padding: 40, maxWidth: 420, width: "90%", boxShadow: isDark ? "0 4px 24px #0008" : "0 4px 24px #0001", transition: "background 0.3s, border-color 0.3s" }}>
-        <h1 style={{ margin: "0 0 8px", fontSize: 22, fontWeight: 700 }}>Theme Toggle Demo</h1>
-        <p style={{ margin: "0 0 24px", color: tokens.subtext, fontSize: 14, lineHeight: 1.6 }}>
-          Preference is read from <code>localStorage</code> and OS setting on first load, then persisted across sessions.
-        </p>
-
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: tokens.bg, borderRadius: 10, padding: "12px 16px", border: `1px solid ${tokens.border}`, marginBottom: 24 }}>
-          <span style={{ fontSize: 14, fontWeight: 500 }}>
-            {isDark ? "🌙 Dark mode" : "☀️ Light mode"}
-          </span>
-          <button
-            onClick={toggle}
-            aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
-            style={{ background: tokens.btnBg, color: "#fff", border: "none", borderRadius: 8, padding: "10px 20px", fontSize: 14, fontWeight: 600, cursor: "pointer", minWidth: 44, minHeight: 44, transition: "background 0.2s" }}
-          >
-            Switch to {isDark ? "☀️ Light" : "🌙 Dark"}
-          </button>
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {["Stored preference", "Current theme", "OS preference"].map((label, i) => {
-            const values = [
-              (() => { try { return localStorage.getItem("theme") || "none"; } catch { return "unavailable"; } })(),
-              theme,
-              window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light",
-            ];
-            return (
-              <div key={label} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: tokens.subtext, borderBottom: i < 2 ? `1px solid ${tokens.border}` : "none", paddingBottom: i < 2 ? 8 : 0 }}>
-                <span>{label}</span>
-                <span style={{ fontWeight: 600, color: tokens.text }}>{values[i]}</span>
-              </div>
-            );
-          })}
-        </div>
+    <div
+      style={containerStyle}
+      onClick={onToggle}
+      role="button"
+      aria-pressed={isDark}
+      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onToggle();
+        }
+      }}
+    >
+      <span style={iconStyle}>{isDark ? '🌙' : '☀️'}</span>
+      <div style={trackStyle}>
+        <div style={thumbStyle} />
       </div>
+      <span style={labelStyle}>{isDark ? 'Dark' : 'Light'}</span>
     </div>
   );
 }
