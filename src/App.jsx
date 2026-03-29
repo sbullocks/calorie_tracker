@@ -1,6 +1,4 @@
 import { useEffect, useState } from 'react'
-import { signOut } from 'firebase/auth'
-import { auth } from './firebase'
 import { useAuth } from './hooks/useAuth'
 import { useCalorieStore } from './hooks/useCalorieStore'
 import { todayKey, fmtDate, calColor, sumCal } from './utils/helpers'
@@ -12,6 +10,7 @@ import FriendScreen from './components/FriendScreen'
 import History from './components/History'
 import NavBar from './components/NavBar'
 import ThemeToggle from './components/ThemeToggle'
+import UserMenu from './components/UserMenu'
 
 const HEADER_TITLE = {
   dashboard: (name) => `Hi, ${name} 👋`,
@@ -79,30 +78,24 @@ export default function App() {
             <div className="header-sub">{fmtDate(today)}</div>
           )}
         </div>
-        {tab === 'dashboard' && (
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontWeight: 700, fontSize: 18, color: calColor(pct) }}>
-              {consumed.toLocaleString()} cal
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {tab === 'dashboard' && (
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontWeight: 700, fontSize: 18, color: calColor(pct) }}>
+                {consumed.toLocaleString()} cal
+              </div>
+              <div className="muted" style={{ fontSize: 12 }}>
+                of {profile.goal.toLocaleString()}
+              </div>
             </div>
-            <div className="muted" style={{ fontSize: 12 }}>
-              of {profile.goal.toLocaleString()}
+          )}
+          {tab === 'friend' && (
+            <div style={{ fontSize: 12, fontWeight: 600, color: friend ? 'var(--green)' : 'var(--muted)' }}>
+              {friend ? `● ${friend.name}` : '○ No friend'}
             </div>
-          </div>
-        )}
-        {tab === 'friend' && (
-          <div style={{ fontSize: 12, fontWeight: 600, color: friend ? 'var(--green)' : 'var(--muted)' }}>
-            {friend ? `● ${friend.name}` : '○ No friend'}
-          </div>
-        )}
-        {tab === 'history' && (
-          <button
-            className="btn-link"
-            style={{ fontSize: 12 }}
-            onClick={() => signOut(auth)}
-          >
-            Sign out
-          </button>
-        )}
+          )}
+          <UserMenu email={user.email} />
+        </div>
       </header>
 
       <main className="screen">
